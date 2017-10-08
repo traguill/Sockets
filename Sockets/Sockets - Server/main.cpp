@@ -7,6 +7,7 @@
 #include "Ws2tcpip.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int Quit()
 {
@@ -14,7 +15,7 @@ int Quit()
 	return 0;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char* argv[])
 {
 	//Retrieve Arguments
 	if (argc != 3)
@@ -23,11 +24,9 @@ int main(int argc, char **argv)
 		return Quit();
 	}
 
-	va_list ap;
-	va_start(ap, argc);
-	const char* ip_address = va_arg(ap, const char*);
-	int port_address = va_arg(ap, int);
-	va_end(ap);
+	const char* ip_address = argv[1];
+	int port_address = atoi(argv[2]);
+
 
 	//Init socket library
 	WSADATA wsa_data;
@@ -72,6 +71,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			printf("Server: msg received %s\n", buffer);
 			//Send response
 			recv_result = sendto(s, msg_buff, sizeof(msg_buff), 0, (SOCKADDR*)&send_addr, send_size);
 			if (recv_result == SOCKET_ERROR)
@@ -79,6 +79,7 @@ int main(int argc, char **argv)
 				printf("Server: error while sending the response %d\n", WSAGetLastError());
 				error = true;
 			}
+			printf("Server: sending msg\n");
 		}
 	} while (error == false);
 	

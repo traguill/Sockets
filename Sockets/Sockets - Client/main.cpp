@@ -7,10 +7,11 @@
 #include "Ws2tcpip.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int Quit()
 {
-	Sleep(2000);
+	Sleep(10000);
 	return 0;
 }
 
@@ -24,11 +25,8 @@ int main(int argc, char **argv)
 		return Quit();
 	}
 
-	va_list ap;
-	va_start(ap, argc);
-	const char* ip_address = va_arg(ap, const char*);
-	int port_address = va_arg(ap, int);
-	va_end(ap);
+	const char* ip_address = argv[1];
+	int port_address = atoi(argv[2]);
 
 	//Init socket library
 	WSADATA wsa_data;
@@ -75,7 +73,7 @@ int main(int argc, char **argv)
 			}
 			else
 			{
-				printf("Client: received %s", buffer);
+				printf("Client: received %s\n", buffer);
 				++count;
 				ZeroMemory(buffer, length);
 			}

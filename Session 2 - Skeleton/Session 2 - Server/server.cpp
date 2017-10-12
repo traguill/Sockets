@@ -45,6 +45,8 @@ void handleIncomingData()
 	// Call select
 	// TODO
 	timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
 	int sockets_available = select(0, &readSet, nullptr, nullptr, &timeout);
 
 	// List to mark disconnected sockets
@@ -54,15 +56,18 @@ void handleIncomingData()
 	for (auto s : sockets)
 	{
 		// Check if s is ready for read
-		if (...) {
+		if (FD_ISSET(s, &readSet)) {
 
 			// Is the server socket ?
-			if (...) {
+			if (s == serverSocket) {
 				// Accept a new connection
 				// TODO
-
+				sockaddr_in s_addres;
+				int s_size = sizeof(s_addres);
+				SOCKET s2 = accept(s, (SOCKADDR*)&s_addres, &s_size);
 				// Add the new socket to our list sockets
 				// TODO
+				sockets.push_back(s2);
 			}
 
 			// Is a client socket
@@ -70,7 +75,28 @@ void handleIncomingData()
 
 				// Call recv
 				// TODO
-
+				int bytes_recv = recv(s, inputBuffer, inputBufferLen, 0);
+				if (bytes_recv == SOCKET_ERROR)
+				{
+					int lastError = WSAGetLastError();
+					if (lastError == WSAECONNRESET)
+					{
+						std::cout << "A client disconnected forciblyd\n";
+						disconnectedSockets.push_back(s);
+					}
+				}
+				else //Success
+				{
+					if (bytes_recv == 0)
+					{
+						std::cout << "A client disconnected successfully\n";
+						disconnectedSockets.push_back(s);
+					}
+					else
+					{
+						std::cout << "Message received: " << inputBuffer << "\n";
+					}
+				}
 				// Handle errors
 				// - WSAEWOULDBLOCK (do nothing)
 				// - WSAECONNRESET (client disconnected forcibly, so insert s into disconnectedSockets)
@@ -96,14 +122,21 @@ void handleOutgoingData()
 
 	// Create a new socket set
 	// TODO
+	fd_set sendSet;
+	FD_ZERO(&sendSet);
 
 	// Fill the set
 	for (auto s : sockets) {
 		// TODO
+		FD_SET(s, &sendSet);
 	}
 
 	// Call select
 	// TODO
+	timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+	int sockets_available = select(0, nullptr, &sendSet, nullptr, &timeout);
 
 	// List to mark disconnected sockets
 	std::list<SOCKET> disconnectedSockets;
@@ -112,7 +145,7 @@ void handleOutgoingData()
 	for (auto s : sockets)
 	{
 		// Check if s is ready for send
-		if (...) {
+		if (FD_ISSET(s, &sendSet)) {
 
 			// TODO:
 
@@ -121,6 +154,16 @@ void handleOutgoingData()
 			// Handle errors
 			// - WSAEWOULDBLOCK (do nothing)
 			// - WSAECONNRESET (client disconnected, so insert s into disconnectedSockets)
+
+			int bytes_send = send(s, outputBuffer, outputBufferLen, 0);
+			if (bytes_send == SOCKET_ERROR)
+			{
+				int lastError = WSAGetLastError();
+				if (lastError == WSAECONNRESET)
+				{
+					disconnectedSockets.push_back(s);
+				}
+			}
 		}
 	}
 
